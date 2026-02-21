@@ -41,18 +41,32 @@ export class LoanCalculatorService {
     let futureInterest = 0; // Interest to be paid from today forward
     let futureExtraPayment = 0; // Extra payments from today forward
     
+    // Handle undefined/null values with defaults
+    const escrow = loan.escrow || 0;
+    const extraPayment = loan.extraPayment || 0;
+    const oneTimeExtraPayments = loan.oneTimeExtraPayments || 0;
+    
     // Calculate standard monthly payment if not provided or calculate from loan terms
-    const principalAndInterest = loan.monthlyPayment - loan.escrow;
+    const principalAndInterest = loan.monthlyPayment - escrow;
     
     // Generate amortization schedule
     while (balance > 0 && monthCount < totalMonths * 2) { // safety limit
       monthCount++;
       
+      // Apply one-time extra payments at the monthsElapsed point (historical payment already made)
+      if (monthCount === monthsElapsed && oneTimeExtraPayments > 0) {
+        balance = Math.max(0, balance - oneTimeExtraPayments);
+        if (balance === 0) {
+          break; // Loan paid off by one-time payment
+        }
+      }
+      
       const interestPayment = balance * monthlyRate;
       let principalPayment = principalAndInterest - interestPayment;
       
-      // Apply extra payment
-      const extraThisMonth = loan.extraPayment;
+      // For existing loans: apply extra payment to PAST months only (to calculate current balance)
+      // For new loans (monthsElapsed = 0): apply extra payment to all months (future projections)
+      const extraThisMonth = (monthsElapsed === 0 || monthCount <= monthsElapsed) ? extraPayment : 0;
       
       // Total payment towards principal
       const totalPrincipal = principalPayment + extraThisMonth;
@@ -101,25 +115,28 @@ export class LoanCalculatorService {
       futureExtraPayment = totalExtraPayment;
     }
     
-    // Subtract one-time extra payments from current remaining balance
-    currentRemainingBalance = Math.max(0, currentRemainingBalance - loan.oneTimeExtraPayments);
-    
     // Calculate payoff date
     const payoffDate = new Date(startDate);
     payoffDate.setMonth(payoffDate.getMonth() + monthCount);
     
+    // For existing loans, calculate remaining months from today
+    const remainingMonths = monthsElapsed > 0 ? Math.max(0, monthCount - monthsElapsed) : monthCount;
+    
     // For comparison purposes, use future interest (from today forward) if months have elapsed
-    // Total amount to be paid from today = current remaining balance + future interest
+    // Total amount to be paid from today = current remaining balance + future interest + future extra payments
     const relevantInterest = monthsElapsed > 0 ? futureInterest : totalInterest;
     const relevantExtraPayment = monthsElapsed > 0 ? futureExtraPayment : totalExtraPayment;
-    const relevantTotalPaid = monthsElapsed > 0 ? (currentRemainingBalance + futureInterest) : (loan.loanAmount + totalInterest);
+    // IMPORTANT: Total paid includes principal + interest + extra payments (all money leaving your pocket)
+    const relevantTotalPaid = monthsElapsed > 0 
+      ? (currentRemainingBalance + futureInterest + futureExtraPayment) 
+      : (loan.loanAmount + totalInterest + totalExtraPayment);
     
     return {
       totalInterestPaid: relevantInterest,
       totalAmountPaid: relevantTotalPaid,
       totalExtraPayment: relevantExtraPayment,
-      monthsToPayout: monthCount,
-      yearsToPayout: monthCount / 12,
+      monthsToPayout: remainingMonths, // Use remaining months for comparison
+      yearsToPayout: remainingMonths / 12,
       payoffDate: payoffDate.toISOString().split('T')[0],
       currentRemainingBalance: currentRemainingBalance,
       monthsElapsed: monthsElapsed
@@ -136,6 +153,22 @@ export class LoanCalculatorService {
     const differenceInTotalPayment = newResult.totalAmountPaid - originalResult.totalAmountPaid;
     const differenceinInterest = newResult.totalInterestPaid - originalResult.totalInterestPaid;
     const monthlyPaymentDifference = newLoan.monthlyPayment - originalLoan.monthlyPayment;
+    
+    // Handle closing costs - default to 0 if undefined or null
+    const closingCosts = newLoan.closingCosts || 0;
+    
+    // Calculate total cost including closing costs
+    const totalCostWithClosing = newResult.totalAmountPaid + closingCosts;
+    
+    // Net savings after closing costs
+    const netSavings = originalResult.totalAmountPaid - totalCostWithClosing;
+    
+    // Break-even analysis: months until closing costs are recovered
+    let breakEvenMonths = 0;
+    if (closingCosts > 0 && monthlyPaymentDifference < 0) { // Only if new payment is lower and there are closing costs
+      const monthlySavings = Math.abs(monthlyPaymentDifference);
+      breakEvenMonths = monthlySavings > 0 ? Math.ceil(closingCosts / monthlySavings) : 0;
+    }
     
     // Calculate target rate that would save 20% on interest - a good refinancing goal
     const targetInterestSavings = originalResult.totalInterestPaid * 0.20; // Save 20% of interest
@@ -154,7 +187,10 @@ export class LoanCalculatorService {
       differenceInTotalPayment,
       differenceinInterest,
       monthlyPaymentDifference,
-      suggestedNewRate
+      suggestedNewRate,
+      totalCostWithClosing,
+      netSavings,
+      breakEvenMonths
     };
   }
 
@@ -323,7 +359,8 @@ export class LoanCalculatorService {
       monthlyPayment: 2100,
       escrow: 400,
       extraPayment: 0,
-      oneTimeExtraPayments: 0
+      oneTimeExtraPayments: 0,
+      closingCosts: 0
     };
   }
 }

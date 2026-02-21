@@ -39,9 +39,10 @@ export class AppComponent implements OnInit {
       interestRate: [defaultData.interestRate, [Validators.required, Validators.min(0)]],
       startDate: [defaultData.startDate, Validators.required],
       monthlyPayment: [defaultData.monthlyPayment, [Validators.required, Validators.min(0)]],
-      escrow: [defaultData.escrow, [Validators.required, Validators.min(0)]],
-      extraPayment: [defaultData.extraPayment, [Validators.required, Validators.min(0)]],
-      oneTimeExtraPayments: [defaultData.oneTimeExtraPayments, [Validators.required, Validators.min(0)]]
+      escrow: [defaultData.escrow, [Validators.min(0)]],
+      extraPayment: [defaultData.extraPayment, [Validators.min(0)]],
+      oneTimeExtraPayments: [defaultData.oneTimeExtraPayments, [Validators.min(0)]],
+      closingCosts: [0, [Validators.min(0)]]
     });
 
     this.newLoanForm = this.fb.group({
@@ -50,9 +51,10 @@ export class AppComponent implements OnInit {
       interestRate: [5.5, [Validators.required, Validators.min(0)]],
       startDate: [new Date().toISOString().split('T')[0], Validators.required],
       monthlyPayment: [2000, [Validators.required, Validators.min(0)]],
-      escrow: [defaultData.escrow, [Validators.required, Validators.min(0)]],
-      extraPayment: [defaultData.extraPayment, [Validators.required, Validators.min(0)]],
-      oneTimeExtraPayments: [0, [Validators.required, Validators.min(0)]]
+      escrow: [defaultData.escrow, [Validators.min(0)]],
+      extraPayment: [0, [Validators.min(0)]],
+      oneTimeExtraPayments: [0, [Validators.min(0)]],
+      closingCosts: [0, [Validators.min(0)]] // Default 0, user can adjust
     });
   }
 
@@ -60,7 +62,11 @@ export class AppComponent implements OnInit {
     const savedData = this.loanCalculator.loadFromLocalStorage();
     if (savedData) {
       this.originalLoanForm.patchValue(savedData.originalLoan);
-      this.newLoanForm.patchValue(savedData.newLoan);
+      // For new loan, load everything EXCEPT extraPayment (should always start at 0)
+      this.newLoanForm.patchValue({
+        ...savedData.newLoan,
+        extraPayment: 0  // Always reset to 0, don't inherit from saved data
+      });
     }
   }
 
@@ -68,6 +74,7 @@ export class AppComponent implements OnInit {
     // Listen to all form changes and recalculate
     this.originalLoanForm.valueChanges.subscribe(() => {
       this.autoCalculatePayment(this.originalLoanForm, 'original');
+      this.updateNewLoanAmount(); // Auto-populate new loan with remaining balance
       this.calculateComparison();
       this.saveData();
     });
@@ -81,6 +88,30 @@ export class AppComponent implements OnInit {
     // Initial calculation
     this.autoCalculatePayment(this.originalLoanForm, 'original');
     this.autoCalculatePayment(this.newLoanForm, 'new');
+    this.updateNewLoanAmount(); // Initial update of new loan amount
+  }
+  
+  /**
+   * Auto-populate new loan amount with current remaining balance of original loan
+   */
+  private updateNewLoanAmount(): void {
+    if (this.originalLoanForm.valid) {
+      const originalLoan: LoanData = this.originalLoanForm.value;
+      const originalResult = this.loanCalculator.calculateLoan(originalLoan);
+      
+      // Update new loan amount to match the current remaining balance
+      // Also ensure extra payment is 0 for new loan (don't inherit from original)
+      this.newLoanForm.patchValue(
+        { 
+          loanAmount: Math.round(originalResult.currentRemainingBalance),
+          extraPayment: 0  // New loan should not inherit extra payments from original
+        }, 
+        { emitEvent: false }
+      );
+      
+      // Recalculate payment for new loan with updated amount
+      this.autoCalculatePayment(this.newLoanForm, 'new');
+    }
   }
 
   private autoCalculatePayment(formGroup: FormGroup, loanType: 'original' | 'new'): void {
@@ -113,8 +144,20 @@ export class AppComponent implements OnInit {
 
   calculateComparison(): void {
     if (this.originalLoanForm.valid && this.newLoanForm.valid) {
-      const originalLoan: LoanData = this.originalLoanForm.value;
-      const newLoan: LoanData = this.newLoanForm.value;
+      const originalLoan: LoanData = {
+        ...this.originalLoanForm.value,
+        escrow: this.originalLoanForm.value.escrow || 0,
+        extraPayment: this.originalLoanForm.value.extraPayment || 0,
+        oneTimeExtraPayments: this.originalLoanForm.value.oneTimeExtraPayments || 0,
+        closingCosts: this.originalLoanForm.value.closingCosts || 0
+      };
+      const newLoan: LoanData = {
+        ...this.newLoanForm.value,
+        escrow: this.newLoanForm.value.escrow || 0,
+        extraPayment: this.newLoanForm.value.extraPayment || 0,
+        oneTimeExtraPayments: this.newLoanForm.value.oneTimeExtraPayments || 0,
+        closingCosts: this.newLoanForm.value.closingCosts || 0
+      };
       
       this.comparisonResult = this.loanCalculator.compareLoan(originalLoan, newLoan);
     }

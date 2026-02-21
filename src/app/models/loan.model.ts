@@ -7,6 +7,7 @@ export interface LoanData {
   escrow: number;
   extraPayment: number;
   oneTimeExtraPayments: number;
+  closingCosts: number; // Refinancing costs (origination, title, appraisal, etc.)
 }
 
 export interface LoanCalculationResult {
@@ -27,6 +28,9 @@ export interface ComparisonResult {
   differenceinInterest: number;
   monthlyPaymentDifference: number;
   suggestedNewRate: number;
+  totalCostWithClosing: number; // New loan total cost including closing costs
+  netSavings: number; // Savings after accounting for closing costs
+  breakEvenMonths: number; // Months until closing costs are recovered
 }
 
 export interface StoredData {

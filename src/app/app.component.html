@@ -88,13 +88,14 @@
               type="number"
               formControlName="escrow"
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="400"
+              placeholder="0"
             />
+            <p class="text-xs text-gray-500 mt-1">Optional: Property tax, insurance, etc. (leave 0 if none)</p>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
-              Extra Payment (Monthly)
+              Extra Payment (Monthly) - Past Payments Only
             </label>
             <input
               type="number"
@@ -102,6 +103,7 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="0"
             />
+            <p class="text-xs text-gray-500 mt-1">Additional monthly amount you've been paying. Used to calculate current balance only - NOT applied to future payments.</p>
           </div>
 
           <div>
@@ -114,7 +116,7 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="0"
             />
-            <p class="text-xs text-gray-500 mt-1">Total lump sum payments made to principal</p>
+            <p class="text-xs text-gray-500 mt-1">Total of any lump sum payments you've made to principal (e.g., $20,000)</p>
           </div>
         </form>
       </div>
@@ -122,17 +124,19 @@
       <!-- New Loan -->
       <div class="bg-white rounded-lg shadow-lg p-6">
         <h2 class="text-2xl font-bold text-green-600 mb-4">Proposed New Loan</h2>
+        <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-sm">
+          <strong>📊 Refinancing Comparison:</strong> The new loan amount is automatically set to your remaining balance. Choose your desired term (e.g., 30 years for lower payments, 15-20 years to pay off faster).
+        </div>
         <form [formGroup]="newLoanForm" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Loan Amount
+              <span class="text-xs font-normal text-blue-600 ml-2">🔄 Auto-calculated from remaining balance</span>
             </label>
-            <input
-              type="number"
-              formControlName="loanAmount"
-              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="300000"
-            />
+            <div class="w-full px-4 py-2 border border-blue-300 rounded-md bg-blue-50 text-blue-900 font-semibold">
+              {{ formatCurrency(newLoanForm.get('loanAmount')?.value || 0) }}
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Automatically matches your current remaining balance</p>
           </div>
 
           <div>
@@ -145,6 +149,7 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="30"
             />
+            <p class="text-xs text-gray-500 mt-1">Typical refinance: 15, 20, or 30 years</p>
           </div>
 
           <div>
@@ -199,20 +204,36 @@
               type="number"
               formControlName="escrow"
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="400"
+              placeholder="0"
             />
+            <p class="text-xs text-gray-500 mt-1">Optional: Property tax, insurance, etc. (leave 0 if none)</p>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
-              Extra Payment (Monthly)
+              Extra Payment (Monthly) - Future Payments Only
             </label>
             <input
               type="number"
               formControlName="extraPayment"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              placeholder="0"
+              min="0"
+            />
+            <p class="text-xs text-gray-500 mt-1">💡 Leave at $0 to compare minimum payments. Only add if you plan to pay extra on the refinanced loan.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Closing Costs (Refinancing Fees)
+            </label>
+            <input
+              type="number"
+              formControlName="closingCosts"
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="0"
             />
+            <p class="text-xs text-gray-500 mt-1">Optional: Origination, title, appraisal fees (typically 2-5% of loan, leave 0 if unknown)</p>
           </div>
         </form>
       </div>
@@ -221,6 +242,26 @@
     <!-- Results Section -->
     <div *ngIf="comparisonResult" class="bg-white rounded-lg shadow-lg p-6">
       <h2 class="text-2xl font-bold text-gray-900 mb-6">Comparison Results</h2>
+
+      <div class="mb-6 p-4 bg-gray-100 rounded-lg border border-gray-300">
+        <h3 class="text-md font-semibold text-gray-800 mb-2">🔍 Comparison Summary</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="font-medium text-blue-700">Original Loan (Continuing)</p>
+            <p>• Remaining Balance: {{ formatCurrency(comparisonResult.originalLoan.currentRemainingBalance) }}</p>
+            <p>• Interest Rate: {{ originalLoanForm.get('interestRate')?.value }}%</p>
+            <p>• Time Remaining: {{ formatYears(comparisonResult.originalLoan.yearsToPayout) }}</p>
+            <p>• Monthly Payment: {{ formatCurrency(originalLoanForm.get('monthlyPayment')?.value || 0) }}</p>
+          </div>
+          <div>
+            <p class="font-medium text-green-700">New Loan (Refinancing)</p>
+            <p>• Loan Amount: {{ formatCurrency(newLoanForm.get('loanAmount')?.value || 0) }}</p>
+            <p>• Interest Rate: {{ newLoanForm.get('interestRate')?.value }}%</p>
+            <p>• Loan Term: {{ formatYears(comparisonResult.newLoan.yearsToPayout) }}</p>
+            <p>• Monthly Payment: {{ formatCurrency(newLoanForm.get('monthlyPayment')?.value || 0) }}</p>
+          </div>
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <!-- Original Loan Results -->
@@ -272,6 +313,9 @@
         <!-- New Loan Results -->
         <div class="border-l-4 border-green-500 pl-4">
           <h3 class="text-lg font-semibold text-green-600 mb-3">New Loan Summary</h3>
+          <div *ngIf="newLoanForm.get('extraPayment')?.value > 0" class="mb-3 p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-800">
+            ⚠️ Includes ${{ newLoanForm.get('extraPayment')?.value }}/month extra payments
+          </div>
           <div class="space-y-2">
             <div class="bg-green-50 p-3 rounded-md mb-3">
               <div class="flex justify-between items-center">
@@ -290,7 +334,7 @@
               <span class="text-gray-600">Total Amount Paid:</span>
               <span class="font-semibold">{{ formatCurrency(comparisonResult.newLoan.totalAmountPaid) }}</span>
             </div>
-            <div class="flex justify-between">
+            <div *ngIf="newLoanForm.get('extraPayment')?.value > 0" class="flex justify-between">
               <span class="text-gray-600">Total Extra Payments:</span>
               <span class="font-semibold">{{ formatCurrency(comparisonResult.newLoan.totalExtraPayment) }}</span>
             </div>
@@ -310,16 +354,42 @@
       <div class="border-t pt-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Difference Analysis</h3>
         <div *ngIf="comparisonResult.originalLoan.monthsElapsed > 0" class="mb-4 p-3 bg-blue-50 rounded-md text-sm text-gray-700">
-          <strong>Note:</strong> This comparison shows the difference between continuing your current loan vs. refinancing today. All values represent future payments only (from today forward).
+          <strong>📌 Important:</strong> This comparison shows the difference between continuing your current loan vs. refinancing today. All values represent future payments only (from today forward).
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- Term Length Warning -->
+        <div *ngIf="comparisonResult.originalLoan.yearsToPayout !== comparisonResult.newLoan.yearsToPayout" 
+             class="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-md">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-yellow-800">⚠️ Loan Term Difference Detected</h3>
+              <div class="mt-2 text-sm text-yellow-700">
+                <p><strong>Original loan:</strong> {{ formatYears(comparisonResult.originalLoan.yearsToPayout) }} remaining</p>
+                <p><strong>New loan:</strong> {{ formatYears(comparisonResult.newLoan.yearsToPayout) }} term</p>
+                <p class="mt-2">
+                  <strong>Impact:</strong> The new loan extends your payoff date by 
+                  <strong>{{ formatYears(abs(comparisonResult.newLoan.yearsToPayout - comparisonResult.originalLoan.yearsToPayout)) }}</strong>.
+                  Even with a lower interest rate, you may pay more in total due to the longer term. 
+                  Consider adjusting the new loan term to match your remaining term for a direct comparison.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="bg-gray-50 rounded-lg p-4">
             <div class="text-sm text-gray-600 mb-1">Total Payment Difference</div>
             <div class="text-2xl font-bold" [class.text-green-600]="comparisonResult.differenceInTotalPayment < 0" [class.text-red-600]="comparisonResult.differenceInTotalPayment > 0">
               {{ formatCurrency(comparisonResult.differenceInTotalPayment) }}
             </div>
             <div class="text-xs text-gray-500 mt-1">
-              {{ comparisonResult.differenceInTotalPayment < 0 ? 'Savings' : 'Additional Cost' }}
+              {{ comparisonResult.differenceInTotalPayment < 0 ? 'Savings (before closing)' : 'Additional Cost' }}
             </div>
           </div>
 
@@ -333,40 +403,76 @@
             </div>
           </div>
 
-          <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-            <div class="text-sm text-gray-700 mb-1 font-medium">💡 Target Rate for Good Savings</div>
-            <div class="text-2xl font-bold text-green-700">
-              {{ formatPercent(comparisonResult.suggestedNewRate) }}
+          <div class="bg-blue-50 rounded-lg p-4 border-2" [class.border-green-300]="comparisonResult.netSavings > 0" [class.border-red-300]="comparisonResult.netSavings < 0">
+            <div class="text-sm text-gray-700 mb-1 font-medium">
+              💰 Net Savings 
+              <span *ngIf="newLoanForm.get('closingCosts')?.value > 0">(After Closing)</span>
+            </div>
+            <div class="text-2xl font-bold" [class.text-green-700]="comparisonResult.netSavings > 0" [class.text-red-700]="comparisonResult.netSavings < 0">
+              {{ formatCurrency(comparisonResult.netSavings) }}
             </div>
             <div class="text-xs text-gray-600 mt-1">
-              Aim for this rate or lower<br/>
-              <span class="font-semibold">(20% interest savings)</span>
+              <span *ngIf="newLoanForm.get('closingCosts')?.value > 0">
+                Total savings after {{ formatCurrency(newLoanForm.get('closingCosts')?.value || 0) }} closing costs
+              </span>
+              <span *ngIf="!newLoanForm.get('closingCosts')?.value || newLoanForm.get('closingCosts')?.value === 0">
+                Total savings (no closing costs)
+              </span>
             </div>
           </div>
+
+          <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <div class="text-sm text-gray-700 mb-1 font-medium">⏱️ Break-Even Point</div>
+            <div class="text-2xl font-bold text-purple-700">
+              {{ comparisonResult.breakEvenMonths > 0 ? (comparisonResult.breakEvenMonths + ' months') : (newLoanForm.get('closingCosts')?.value > 0 ? 'N/A' : 'Immediate') }}
+            </div>
+            <div class="text-xs text-gray-600 mt-1">
+              <span *ngIf="comparisonResult.breakEvenMonths > 0">Time to recover closing costs</span>
+              <span *ngIf="comparisonResult.breakEvenMonths === 0 && newLoanForm.get('closingCosts')?.value > 0">Higher monthly payment</span>
+              <span *ngIf="comparisonResult.breakEvenMonths === 0 && (!newLoanForm.get('closingCosts')?.value || newLoanForm.get('closingCosts')?.value === 0)">No closing costs</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4 bg-green-50 rounded-lg p-4 border border-green-200">
+          <div class="text-sm text-gray-700 mb-1 font-medium">💡 Target Rate for Good Savings</div>
+          <div class="text-3xl font-bold text-green-700 inline-block">
+            {{ formatPercent(comparisonResult.suggestedNewRate) }}
+          </div>
+          <span class="text-sm text-gray-600 ml-3">
+            Aim for this rate or lower (targets 20% interest savings)
+          </span>
         </div>
       </div>
 
       <!-- Recommendation -->
-      <div class="mt-6 p-4 rounded-lg" [class.bg-green-50]="comparisonResult.differenceInTotalPayment < 0" [class.bg-red-50]="comparisonResult.differenceInTotalPayment > 0">
+      <div class="mt-6 p-4 rounded-lg" [class.bg-green-50]="comparisonResult.netSavings > 0" [class.bg-red-50]="comparisonResult.netSavings <= 0">
         <div class="flex items-start">
           <div class="flex-shrink-0">
-            <svg *ngIf="comparisonResult.differenceInTotalPayment < 0" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg *ngIf="comparisonResult.netSavings > 0" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <svg *ngIf="comparisonResult.differenceInTotalPayment >= 0" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg *ngIf="comparisonResult.netSavings <= 0" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium" [class.text-green-800]="comparisonResult.differenceInTotalPayment < 0" [class.text-red-800]="comparisonResult.differenceInTotalPayment >= 0">
-              {{ comparisonResult.differenceInTotalPayment < 0 ? 'Refinancing may be beneficial!' : 'Consider the total cost difference' }}
+            <h3 class="text-sm font-medium" [class.text-green-800]="comparisonResult.netSavings > 0" [class.text-red-800]="comparisonResult.netSavings <= 0">
+              {{ comparisonResult.netSavings > 0 ? 'Refinancing is beneficial!' : 'Refinancing may not be worth it' }}
             </h3>
-            <div class="mt-2 text-sm" [class.text-green-700]="comparisonResult.differenceInTotalPayment < 0" [class.text-red-700]="comparisonResult.differenceInTotalPayment >= 0">
-              <p *ngIf="comparisonResult.differenceInTotalPayment < 0">
-                Based on the calculations, refinancing could save you {{ formatCurrency(abs(comparisonResult.differenceInTotalPayment)) }} over the life of the loan.
+            <div class="mt-2 text-sm" [class.text-green-700]="comparisonResult.netSavings > 0" [class.text-red-700]="comparisonResult.netSavings <= 0">
+              <p *ngIf="comparisonResult.netSavings > 0 && newLoanForm.get('closingCosts')?.value > 0">
+                After paying {{ formatCurrency(newLoanForm.get('closingCosts')?.value || 0) }} in closing costs, you would still save {{ formatCurrency(comparisonResult.netSavings) }} over the life of the loan.
+                <span *ngIf="comparisonResult.breakEvenMonths > 0"> You'll break even in {{ comparisonResult.breakEvenMonths }} months ({{ formatYears(comparisonResult.breakEvenMonths / 12) }}).</span>
               </p>
-              <p *ngIf="comparisonResult.differenceInTotalPayment >= 0">
-                While the new loan may have lower monthly payments, you would pay {{ formatCurrency(comparisonResult.differenceInTotalPayment) }} more over the life of the loan.
+              <p *ngIf="comparisonResult.netSavings > 0 && (!newLoanForm.get('closingCosts')?.value || newLoanForm.get('closingCosts')?.value === 0)">
+                This refinance would save you {{ formatCurrency(comparisonResult.netSavings) }} over the life of the loan. Since there are no closing costs, you'll start saving immediately!
+              </p>
+              <p *ngIf="comparisonResult.netSavings <= 0 && newLoanForm.get('closingCosts')?.value > 0">
+                After accounting for {{ formatCurrency(newLoanForm.get('closingCosts')?.value || 0) }} in closing costs, this refinance would cost you {{ formatCurrency(abs(comparisonResult.netSavings)) }} more over the life of the loan. Consider negotiating a lower rate or reducing closing costs.
+              </p>
+              <p *ngIf="comparisonResult.netSavings <= 0 && (!newLoanForm.get('closingCosts')?.value || newLoanForm.get('closingCosts')?.value === 0)">
+                This refinance would cost you {{ formatCurrency(abs(comparisonResult.netSavings)) }} more over the life of the loan. Consider negotiating a lower interest rate to make this refinance worthwhile.
               </p>
             </div>
           </div>
