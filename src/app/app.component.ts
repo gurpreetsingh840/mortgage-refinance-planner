@@ -209,4 +209,12 @@ export class AppComponent implements OnInit {
   abs(value: number): number {
     return Math.abs(value);
   }
+
+  setLoanTerm(formGroup: FormGroup, years: number): void {
+    formGroup.patchValue({ loanLengthYears: years });
+  }
+
+  setInterestRate(formGroup: FormGroup, rate: number): void {
+    formGroup.patchValue({ interestRate: rate });
+  }
 }
