@@ -42,14 +42,14 @@ export class AppComponent implements OnInit {
       escrow: [defaultData.escrow, [Validators.min(0)]],
       extraPayment: [defaultData.extraPayment, [Validators.min(0)]],
       oneTimeExtraPayments: [defaultData.oneTimeExtraPayments, [Validators.min(0)]],
-      closingCosts: [0, [Validators.min(0)]]
+      closingCosts: [0, [Validators.min(0)]],
+      continueExtraPayments: [false] // Default to not continuing
     });
 
     this.newLoanForm = this.fb.group({
       loanAmount: [defaultData.loanAmount, [Validators.required, Validators.min(0)]],
       loanLengthYears: [defaultData.loanLengthYears, [Validators.required, Validators.min(1)]],
       interestRate: [5.5, [Validators.required, Validators.min(0)]],
-      startDate: [new Date().toISOString().split('T')[0], Validators.required],
       monthlyPayment: [2000, [Validators.required, Validators.min(0)]],
       escrow: [defaultData.escrow, [Validators.min(0)]],
       extraPayment: [0, [Validators.min(0)]],
@@ -62,11 +62,8 @@ export class AppComponent implements OnInit {
     const savedData = this.loanCalculator.loadFromLocalStorage();
     if (savedData) {
       this.originalLoanForm.patchValue(savedData.originalLoan);
-      // For new loan, load everything EXCEPT extraPayment (should always start at 0)
-      this.newLoanForm.patchValue({
-        ...savedData.newLoan,
-        extraPayment: 0  // Always reset to 0, don't inherit from saved data
-      });
+      // For new loan, load all saved data including extraPayment
+      this.newLoanForm.patchValue(savedData.newLoan);
     }
   }
 
@@ -100,11 +97,10 @@ export class AppComponent implements OnInit {
       const originalResult = this.loanCalculator.calculateLoan(originalLoan);
       
       // Update new loan amount to match the current remaining balance
-      // Also ensure extra payment is 0 for new loan (don't inherit from original)
+      // DON'T touch other fields like extraPayment - respect user's input
       this.newLoanForm.patchValue(
         { 
-          loanAmount: Math.round(originalResult.currentRemainingBalance),
-          extraPayment: 0  // New loan should not inherit extra payments from original
+          loanAmount: Math.round(originalResult.currentRemainingBalance)
         }, 
         { emitEvent: false }
       );
@@ -153,6 +149,7 @@ export class AppComponent implements OnInit {
       };
       const newLoan: LoanData = {
         ...this.newLoanForm.value,
+        startDate: new Date().toISOString().split('T')[0], // Always use current date for new loan
         escrow: this.newLoanForm.value.escrow || 0,
         extraPayment: this.newLoanForm.value.extraPayment || 0,
         oneTimeExtraPayments: this.newLoanForm.value.oneTimeExtraPayments || 0,
@@ -167,7 +164,10 @@ export class AppComponent implements OnInit {
     if (this.originalLoanForm.valid && this.newLoanForm.valid) {
       this.loanCalculator.saveToLocalStorage(
         this.originalLoanForm.value,
-        this.newLoanForm.value
+        {
+          ...this.newLoanForm.value,
+          startDate: new Date().toISOString().split('T')[0] // Always use current date for new loan
+        }
       );
     }
   }

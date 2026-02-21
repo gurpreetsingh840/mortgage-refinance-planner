@@ -8,6 +8,7 @@ export interface LoanData {
   extraPayment: number;
   oneTimeExtraPayments: number;
   closingCosts: number; // Refinancing costs (origination, title, appraisal, etc.)
+  continueExtraPayments?: boolean; // Whether to continue extra payments in the future (original loan only)
 }
 
 export interface LoanCalculationResult {

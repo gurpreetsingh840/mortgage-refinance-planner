@@ -103,7 +103,21 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="0"
             />
-            <p class="text-xs text-gray-500 mt-1">Additional monthly amount you've been paying. Used to calculate current balance only - NOT applied to future payments.</p>
+            <p class="text-xs text-gray-500 mt-1">Additional monthly amount you've been paying. Used to calculate current balance.</p>
+            
+            <!-- Checkbox to continue extra payments -->
+            <div class="mt-2 flex items-center">
+              <input
+                type="checkbox"
+                id="continueExtraPayments"
+                formControlName="continueExtraPayments"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label for="continueExtraPayments" class="ml-2 block text-sm text-gray-700">
+                Continue paying this extra amount in the future
+              </label>
+            </div>
+            <p class="text-xs text-gray-500 mt-1 ml-6">Check this if you plan to keep making extra payments on your current loan</p>
           </div>
 
           <div>
@@ -167,17 +181,6 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
-              Start Date
-            </label>
-            <input
-              type="date"
-              formControlName="startDate"
-              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
               Principal & Interest (P&I)
             </label>
             <div class="w-full px-4 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700 font-semibold">
@@ -225,6 +228,19 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
+              One-Time Extra Payment (Lump Sum at Refinance)
+            </label>
+            <input
+              type="number"
+              formControlName="oneTimeExtraPayments"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="0"
+            />
+            <p class="text-xs text-gray-500 mt-1">Optional: Lump sum payment you'll make immediately when refinancing to reduce principal (e.g., $10,000)</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
               Closing Costs (Refinancing Fees)
             </label>
             <input
@@ -252,6 +268,9 @@
             <p>• Interest Rate: {{ originalLoanForm.get('interestRate')?.value }}%</p>
             <p>• Time Remaining: {{ formatYears(comparisonResult.originalLoan.yearsToPayout) }}</p>
             <p>• Monthly Payment: {{ formatCurrency(originalLoanForm.get('monthlyPayment')?.value || 0) }}</p>
+            <p *ngIf="originalLoanForm.get('continueExtraPayments')?.value && originalLoanForm.get('extraPayment')?.value > 0" class="text-blue-600 font-medium">
+              • Extra: +${{ originalLoanForm.get('extraPayment')?.value }}/month
+            </p>
           </div>
           <div>
             <p class="font-medium text-green-700">New Loan (Refinancing)</p>
@@ -270,6 +289,9 @@
             Original Loan Summary
             <span *ngIf="comparisonResult.originalLoan.monthsElapsed > 0" class="text-sm font-normal text-gray-600">(Remaining Payments)</span>
           </h3>
+          <div *ngIf="originalLoanForm.get('continueExtraPayments')?.value && originalLoanForm.get('extraPayment')?.value > 0" class="mb-3 p-2 bg-blue-50 border border-blue-300 rounded text-xs text-blue-800">
+            ✓ Includes ${{ originalLoanForm.get('extraPayment')?.value }}/month extra payments (continued)
+          </div>
           <div class="space-y-2">
             <div class="bg-blue-50 p-3 rounded-md mb-3">
               <div class="flex justify-between items-center mb-1">
@@ -293,7 +315,7 @@
               </span>
               <span class="font-semibold">{{ formatCurrency(comparisonResult.originalLoan.totalAmountPaid) }}</span>
             </div>
-            <div class="flex justify-between">
+            <div *ngIf="originalLoanForm.get('continueExtraPayments')?.value && comparisonResult.originalLoan.totalExtraPayment > 0" class="flex justify-between">
               <span class="text-gray-600">
                 <span *ngIf="comparisonResult.originalLoan.monthsElapsed > 0">Future </span>Extra Payments:
               </span>
@@ -315,6 +337,9 @@
           <h3 class="text-lg font-semibold text-green-600 mb-3">New Loan Summary</h3>
           <div *ngIf="newLoanForm.get('extraPayment')?.value > 0" class="mb-3 p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-800">
             ⚠️ Includes ${{ newLoanForm.get('extraPayment')?.value }}/month extra payments
+          </div>
+          <div *ngIf="newLoanForm.get('oneTimeExtraPayments')?.value > 0" class="mb-3 p-2 bg-green-50 border border-green-300 rounded text-xs text-green-800">
+            💰 Includes {{ formatCurrency(newLoanForm.get('oneTimeExtraPayments')?.value || 0) }} lump sum payment at refinance
           </div>
           <div class="space-y-2">
             <div class="bg-green-50 p-3 rounded-md mb-3">

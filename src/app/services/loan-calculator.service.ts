@@ -49,12 +49,30 @@ export class LoanCalculatorService {
     // Calculate standard monthly payment if not provided or calculate from loan terms
     const principalAndInterest = loan.monthlyPayment - escrow;
     
+    // For new loans (monthsElapsed = 0), apply one-time payment immediately at the start
+    if (monthsElapsed === 0 && oneTimeExtraPayments > 0) {
+      balance = Math.max(0, balance - oneTimeExtraPayments);
+      if (balance === 0) {
+        // Loan paid off immediately by one-time payment
+        return {
+          totalInterestPaid: 0,
+          totalAmountPaid: loan.loanAmount,
+          totalExtraPayment: oneTimeExtraPayments,
+          monthsToPayout: 0,
+          yearsToPayout: 0,
+          payoffDate: loan.startDate,
+          currentRemainingBalance: 0,
+          monthsElapsed: 0
+        };
+      }
+    }
+    
     // Generate amortization schedule
     while (balance > 0 && monthCount < totalMonths * 2) { // safety limit
       monthCount++;
       
-      // Apply one-time extra payments at the monthsElapsed point (historical payment already made)
-      if (monthCount === monthsElapsed && oneTimeExtraPayments > 0) {
+      // Apply one-time extra payments at the monthsElapsed point (for existing loans - historical payment already made)
+      if (monthCount === monthsElapsed && monthsElapsed > 0 && oneTimeExtraPayments > 0) {
         balance = Math.max(0, balance - oneTimeExtraPayments);
         if (balance === 0) {
           break; // Loan paid off by one-time payment
@@ -64,9 +82,22 @@ export class LoanCalculatorService {
       const interestPayment = balance * monthlyRate;
       let principalPayment = principalAndInterest - interestPayment;
       
-      // For existing loans: apply extra payment to PAST months only (to calculate current balance)
-      // For new loans (monthsElapsed = 0): apply extra payment to all months (future projections)
-      const extraThisMonth = (monthsElapsed === 0 || monthCount <= monthsElapsed) ? extraPayment : 0;
+      // Determine whether to apply extra payments:
+      // - For existing loans: apply to past months always, future months only if continueExtraPayments is true
+      // - For new loans (monthsElapsed = 0): always apply to all months
+      let applyExtraPayment = false;
+      if (monthsElapsed === 0) {
+        // New loan - apply extra payments to all months
+        applyExtraPayment = true;
+      } else if (monthCount <= monthsElapsed) {
+        // Existing loan, past months - always apply (to calculate current balance correctly)
+        applyExtraPayment = true;
+      } else {
+        // Existing loan, future months - only if user chose to continue
+        applyExtraPayment = loan.continueExtraPayments || false;
+      }
+      
+      const extraThisMonth = applyExtraPayment ? extraPayment : 0;
       
       // Total payment towards principal
       const totalPrincipal = principalPayment + extraThisMonth;
@@ -123,13 +154,15 @@ export class LoanCalculatorService {
     const remainingMonths = monthsElapsed > 0 ? Math.max(0, monthCount - monthsElapsed) : monthCount;
     
     // For comparison purposes, use future interest (from today forward) if months have elapsed
-    // Total amount to be paid from today = current remaining balance + future interest + future extra payments
     const relevantInterest = monthsElapsed > 0 ? futureInterest : totalInterest;
     const relevantExtraPayment = monthsElapsed > 0 ? futureExtraPayment : totalExtraPayment;
-    // IMPORTANT: Total paid includes principal + interest + extra payments (all money leaving your pocket)
+    
+    // Total amount to be paid = Principal + Interest ONLY
+    // Extra payments are NOT additional cost - they're just accelerated principal payments that reduce interest
+    // The principal is always paid in full whether via regular payments or extra payments
     const relevantTotalPaid = monthsElapsed > 0 
-      ? (currentRemainingBalance + futureInterest + futureExtraPayment) 
-      : (loan.loanAmount + totalInterest + totalExtraPayment);
+      ? (currentRemainingBalance + futureInterest) 
+      : (loan.loanAmount + totalInterest);
     
     return {
       totalInterestPaid: relevantInterest,
@@ -360,7 +393,8 @@ export class LoanCalculatorService {
       escrow: 400,
       extraPayment: 0,
       oneTimeExtraPayments: 0,
-      closingCosts: 0
+      closingCosts: 0,
+      continueExtraPayments: false
     };
   }
 }
