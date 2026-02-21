@@ -2,6 +2,12 @@
 
 A comprehensive Angular web application for comparing original loans with refinancing options.
 
+## 🚀 Live Demo
+
+**Try it now without installation:** [https://gurpreetsingh840.github.io/mortgage-refinance-planner/](https://gurpreetsingh840.github.io/mortgage-refinance-planner/)
+
+No installation required - just click the link above to start comparing loans immediately!
+
 ## Features
 
 - **Side-by-side loan comparison**: Compare your current loan with a proposed refinancing option
@@ -17,6 +23,8 @@ A comprehensive Angular web application for comparing original loans with refina
 - **Real-time updates**: Results update automatically as you modify any input
 
 ## Installation
+
+**Want to run it locally or contribute?** Follow these steps:
 
 1. Install dependencies:
 
@@ -128,6 +136,14 @@ npm run build
 ```bash
 npm test
 ```
+
+### Deploy to GitHub Pages
+
+```bash
+npm run deploy
+```
+
+This will build the app for production and deploy it to GitHub Pages automatically.
 
 ## License
 
