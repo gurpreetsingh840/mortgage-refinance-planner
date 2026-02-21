@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "deploy": "ng build --configuration production --base-href /mortgage-refinance-planner/ && npx angular-cli-ghpages --dir=dist/refin-compare"
+    "deploy": "ng build --configuration production && npx angular-cli-ghpages --dir=dist/refin-compare"
   },
   "private": true,
   "dependencies": {

@@ -28,6 +28,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/mortgage-refinance-planner/",
               "budgets": [
                 {
                   "type": "initial",
