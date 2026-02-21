@@ -135,6 +135,7 @@ export class LoanCalculatorService {
     
     const differenceInTotalPayment = newResult.totalAmountPaid - originalResult.totalAmountPaid;
     const differenceinInterest = newResult.totalInterestPaid - originalResult.totalInterestPaid;
+    const monthlyPaymentDifference = newLoan.monthlyPayment - originalLoan.monthlyPayment;
     
     // Calculate target rate that would save 20% on interest - a good refinancing goal
     const targetInterestSavings = originalResult.totalInterestPaid * 0.20; // Save 20% of interest
@@ -152,6 +153,7 @@ export class LoanCalculatorService {
       newLoan: newResult,
       differenceInTotalPayment,
       differenceinInterest,
+      monthlyPaymentDifference,
       suggestedNewRate
     };
   }

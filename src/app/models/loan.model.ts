@@ -25,6 +25,7 @@ export interface ComparisonResult {
   newLoan: LoanCalculationResult;
   differenceInTotalPayment: number;
   differenceinInterest: number;
+  monthlyPaymentDifference: number;
   suggestedNewRate: number;
 }
 

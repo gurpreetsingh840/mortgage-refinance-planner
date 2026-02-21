@@ -273,6 +273,15 @@
         <div class="border-l-4 border-green-500 pl-4">
           <h3 class="text-lg font-semibold text-green-600 mb-3">New Loan Summary</h3>
           <div class="space-y-2">
+            <div class="bg-green-50 p-3 rounded-md mb-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-700 font-medium">Monthly Payment Difference:</span>
+                <span class="font-bold text-lg" [class.text-green-700]="comparisonResult.monthlyPaymentDifference < 0" [class.text-red-700]="comparisonResult.monthlyPaymentDifference > 0" [class.text-gray-700]="comparisonResult.monthlyPaymentDifference === 0">{{ formatCurrency(comparisonResult.monthlyPaymentDifference) }}</span>
+              </div>
+              <div class="text-xs text-gray-600 mt-1">
+                {{ comparisonResult.monthlyPaymentDifference < 0 ? 'Lower monthly payment' : comparisonResult.monthlyPaymentDifference > 0 ? 'Higher monthly payment' : 'Same monthly payment' }}
+              </div>
+            </div>
             <div class="flex justify-between">
               <span class="text-gray-600">Total Interest Paid:</span>
               <span class="font-semibold">{{ formatCurrency(comparisonResult.newLoan.totalInterestPaid) }}</span>
