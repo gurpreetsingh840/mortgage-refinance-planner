@@ -47,14 +47,14 @@ export class AppComponent implements OnInit {
     });
 
     this.newLoanForm = this.fb.group({
-      loanAmount: [defaultData.loanAmount, [Validators.required, Validators.min(0)]],
-      loanLengthYears: [defaultData.loanLengthYears, [Validators.required, Validators.min(1)]],
-      interestRate: [5.5, [Validators.required, Validators.min(0)]],
-      monthlyPayment: [2000, [Validators.required, Validators.min(0)]],
-      escrow: [defaultData.escrow, [Validators.min(0)]],
+      loanAmount: [null, [Validators.required, Validators.min(0)]],
+      loanLengthYears: [null, [Validators.required, Validators.min(1)]],
+      interestRate: [null, [Validators.required, Validators.min(0)]],
+      monthlyPayment: [null, [Validators.required, Validators.min(0)]],
+      escrow: [0, [Validators.min(0)]],
       extraPayment: [0, [Validators.min(0)]],
       oneTimeExtraPayments: [0, [Validators.min(0)]],
-      closingCosts: [0, [Validators.min(0)]] // Default 0, user can adjust
+      closingCosts: [0, [Validators.min(0)]]
     });
   }
 
@@ -82,17 +82,29 @@ export class AppComponent implements OnInit {
       this.saveData();
     });
     
-    // Initial calculation
-    this.autoCalculatePayment(this.originalLoanForm, 'original');
-    this.autoCalculatePayment(this.newLoanForm, 'new');
-    this.updateNewLoanAmount(); // Initial update of new loan amount
+    // Initial calculation - only if form has data
+    if (this.hasFormData(this.originalLoanForm)) {
+      this.autoCalculatePayment(this.originalLoanForm, 'original');
+      this.updateNewLoanAmount();
+    }
+    if (this.hasFormData(this.newLoanForm)) {
+      this.autoCalculatePayment(this.newLoanForm, 'new');
+    }
+  }
+  
+  /**
+   * Check if form has any data entered
+   */
+  private hasFormData(form: FormGroup): boolean {
+    const values = form.value;
+    return values.loanAmount > 0 || values.interestRate > 0 || values.startDate !== '';
   }
   
   /**
    * Auto-populate new loan amount with current remaining balance of original loan
    */
   private updateNewLoanAmount(): void {
-    if (this.originalLoanForm.valid) {
+    if (this.originalLoanForm.valid && this.hasFormData(this.originalLoanForm)) {
       const originalLoan: LoanData = this.originalLoanForm.value;
       const originalResult = this.loanCalculator.calculateLoan(originalLoan);
       
@@ -139,7 +151,9 @@ export class AppComponent implements OnInit {
   }
 
   calculateComparison(): void {
-    if (this.originalLoanForm.valid && this.newLoanForm.valid) {
+    // Only calculate if both forms are valid and have data
+    if (this.originalLoanForm.valid && this.newLoanForm.valid && 
+        this.hasFormData(this.originalLoanForm) && this.hasFormData(this.newLoanForm)) {
       const originalLoan: LoanData = {
         ...this.originalLoanForm.value,
         escrow: this.originalLoanForm.value.escrow || 0,
@@ -157,11 +171,16 @@ export class AppComponent implements OnInit {
       };
       
       this.comparisonResult = this.loanCalculator.compareLoan(originalLoan, newLoan);
+    } else {
+      // Clear comparison results if forms are invalid or empty
+      this.comparisonResult = null;
     }
   }
 
   private saveData(): void {
-    if (this.originalLoanForm.valid && this.newLoanForm.valid) {
+    // Only save if both forms are valid and have data
+    if (this.originalLoanForm.valid && this.newLoanForm.valid && 
+        this.hasFormData(this.originalLoanForm) && this.hasFormData(this.newLoanForm)) {
       this.loanCalculator.saveToLocalStorage(
         this.originalLoanForm.value,
         {

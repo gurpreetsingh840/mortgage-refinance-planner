@@ -381,16 +381,16 @@ export class LoanCalculatorService {
   }
 
   /**
-   * Get default loan data
+   * Get default loan data - all empty for first time users
    */
   getDefaultLoanData(): LoanData {
     return {
-      loanAmount: 300000,
-      loanLengthYears: 30,
-      interestRate: 6.5,
-      startDate: new Date().toISOString().split('T')[0],
-      monthlyPayment: 2100,
-      escrow: 400,
+      loanAmount: null as any,
+      loanLengthYears: null as any,
+      interestRate: null as any,
+      startDate: '',
+      monthlyPayment: null as any,
+      escrow: 0,
       extraPayment: 0,
       oneTimeExtraPayments: 0,
       closingCosts: 0,
